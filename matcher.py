@@ -29,6 +29,7 @@ def parse(tokens, automaton=None):
       return token, a
 
 def erToAFNe(er, debug=False):
+   er = er.replace('(',' ').replace(',',' ').replace(')',' ')
    infix, afne = parse(deque(er.split()))
    afne.compute_e_closures()
    if debug:
