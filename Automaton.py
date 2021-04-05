@@ -32,6 +32,7 @@ class Automaton:
    def compute_e_closures(self):
       t = {}
       total = 0
+      # Começa computando transições epsilon diretas e o próprio estado
       for state in self.delta:
          t[state] = {state}
          total += 1
@@ -39,6 +40,9 @@ class Automaton:
             if trans[0] == E:
                t[state].add(trans[1])
                total += 1
+      # Computa estados indiretamente alcançados por epsilon
+      # Injeta estados alcançáveis por estados já computados uma vez por repetição
+      # Para quando o total de estados em todas as closures para de crescer
       comp = total
       while True:
          for state in t:
