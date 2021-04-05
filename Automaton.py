@@ -3,6 +3,8 @@ E = "_e"
 
 class Automaton:
    
+   e_closure_table = None
+   
    def __init__(self, sigma, Q, delta, ini, F):
       self.sigma = sigma
       self.Q = Q
@@ -23,7 +25,40 @@ class Automaton:
       self.print_delta()
       print("Initial state:", self.ini)
       print("Final states:", self.F)
+      for state in self.Q:
+         print("e-closure("+state+") =", self.e_closure_table[state])
       return ""
+
+   def compute_e_closures(self):
+      t = {}
+      total = 0
+      for state in self.delta:
+         t[state] = {state}
+         total += 1
+         for trans in self.delta[state]:
+            if trans[0] == E:
+               t[state].add(trans[1])
+               total += 1
+      comp = total
+      while True:
+         for state in t:
+            temp = set()
+            for reach1 in t[state]:
+               if reach1 != state:
+                  for reach2 in t[reach1]:
+                     if reach2 not in t[state]:
+                        temp.add(reach2)
+                        comp += 1
+            t[state] |= temp
+         if comp == total:
+            break
+         total = comp
+      self.e_closure_table = t
+
+   def e_closure(self, state):
+      if state not in self.Q:
+         return None
+      return self.e_closure_table[state]
 
    def concat_automata(self, a):
       # Combina sigmas

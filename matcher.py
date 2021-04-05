@@ -30,6 +30,7 @@ def parse(tokens, automaton=None):
 
 def erToAFNe(er, debug=False):
    infix, afne = parse(deque(er.split()))
+   afne.compute_e_closures()
    if debug:
       print("Input:", infix)
       print("\nAFNe:")
