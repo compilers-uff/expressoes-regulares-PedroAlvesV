@@ -25,9 +25,33 @@ class Automaton:
       self.print_delta()
       print("Initial state:", self.ini)
       print("Final states:", self.F)
-      for state in self.Q:
-         print("e-closure("+state+") =", self.e_closure_table[state])
+      if self.e_closure_table:
+         for state in self.Q:
+            print("e-closure("+state+") =", self.e_closure_table[state])
       return ""
+      
+   def afneToAFN(self):
+      self.compute_e_closures()
+      d = dict()
+      F = set()
+      for state in self.Q:
+         # Definindo d'
+         d[state] = []
+         for symbol in self.sigma:
+            temp = []
+            for reachable in self.e_closure_table[state]:
+               # Definindo F' (aproveitando o loop pelos e_closure)
+               if reachable in self.F:
+                  F.add(state)
+               for trans in self.delta[reachable]:
+                  if trans[0] == symbol:
+                     temp.append(self.e_closure_table[trans[1]])
+                     break
+            tempset = set().union(*temp)
+            if tempset:
+               d[state].append( (symbol, tempset) )
+      F = list(F)
+      return Automaton(self.sigma, self.Q, d, self.ini, F)
 
    def compute_e_closures(self):
       t = {}
