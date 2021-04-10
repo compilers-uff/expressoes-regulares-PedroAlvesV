@@ -29,7 +29,127 @@ class Automaton:
          for state in self.Q:
             print("e-closure("+state+") =", self.e_closure_table[state])
       return ""
+   
+   def afnToAFD(self):
+      Q = set()
+      d = self.delta.copy()
+      F = set(self.F)
       
+      # Histórico de estados criados nesse processo. Guarda <estado>:<estados originais> (ex.: '51': {'5','1'})
+      # É necessário pra prevenir estados duplicados (ex.: '51' e '15') criados em momentos diferentes.
+      new_states = dict()
+            
+      def is_duplicate(st_components, statelist, find=False):
+         for state, components in statelist.items():
+            if st_components == components:
+               if find:
+                  return state
+               return True
+         return False
+         
+      def is_final(mother_states):
+         for state in mother_states:
+            if state in self.F:
+               return True
+         return False
+      
+      # Resolve indeterminismo inicial (leitura de símbolo num estado podendo levar a mais de um outro)
+      for state in self.delta:
+         for i in range(len(self.delta[state])):
+            trans = self.delta[state][i]
+            # Sendo a transição indeterminística, aglutina estados de destino num único estado novo
+            if len(trans[1]) > 1:
+               new_state = ''.join(trans[1])
+               trans_symbol = trans[0]
+               mother_states = trans[1]
+               # Adiciona à lista de estados finais, se for gerado a partir de algum estado final
+               if is_final(mother_states):
+                  F.add(new_state)
+               new_transitions = []
+               # Avalia transições desse novo estado e acrescenta entrada (estado e transições) em delta
+               # Prepara, também, informações sobre estados novos criados como destino das transições novas
+               for symbol in self.sigma:
+                  dest_new_state = ''
+                  dest_mother_states = set()
+                  for mother_state in mother_states:
+                     for t in self.delta[mother_state]:
+                        if t[0] == symbol:
+                           dest_new_state += ''.join(t[1])
+                           dest_mother_states |= t[1]
+                  # Previne duplicação de estados novos com nomes diferentes (concatenações diferentes)
+                  state_name = is_duplicate(dest_mother_states, new_states, True)
+                  if state_name and state_name != dest_new_state:
+                     dest_new_state = state_name
+                  # Adiciona à lista de estados finais, se for gerado a partir de algum estado final
+                  if is_final(dest_mother_states):
+                     F.add(dest_new_state)
+                  new_trans = (symbol, dest_new_state)
+                  new_transitions.append(new_trans)
+                  # Guarda estados criados como destino de estados novos
+                  new_states[dest_new_state] = dest_mother_states
+               d[new_state] = new_transitions
+               # Atualiza transição indeterminística antiga
+               d[state][i] = (trans_symbol, new_state)
+               # Guarda guarda estados novos
+               new_states[new_state] = mother_states
+            else:
+               # Atualiza transições já determinísticas (questão de tipo, convertendo de set para string)
+               d[state][i] = (trans[0], ''.join(trans[1]))
+      
+      # Como não é garantida a ordem de concatenação na criação de novos estados,
+      # é possível que new_states contenha estados duplicados nomeados diferentes (ex.: q0q1 e q1q0)
+      # Comparando os estados que deram origem a eles, é simples eliminá-los
+      def eliminate_duplicates(states):
+         res = dict()
+         for state, components in states.items():
+            if not is_duplicate(components, res):
+               res[state] = components
+         return res
+      
+      # Criação de estados novos a partir de transições criadas no passo anterior
+      # Algoritmo quase idêntico ao trecho do passo anterior. Difere, principalmente,
+      # na repetição enquanto o tamanho da tabela de transições crescer.
+      dlen = -1
+      while dlen != len(d):
+         dlen = len(d)
+         
+         new_states = eliminate_duplicates(new_states)
+         
+         states_to_add = new_states.copy()
+         for state, mother_states in states_to_add.items():
+            new_transitions = []
+            for symbol in self.sigma:
+               dest_new_state = ''
+               dest_mother_states = set()
+               for mother_state in mother_states:
+                  for trans in self.delta[mother_state]:
+                     if trans[0] == symbol:
+                        dest_new_state += ''.join(trans[1])
+                        dest_mother_states.add(trans[1])
+               state_name = is_duplicate(dest_mother_states, new_states, True)
+               if state_name and state_name != dest_new_state:
+                  dest_new_state = state_name
+               if is_final(dest_mother_states):
+                  F.add(dest_new_state)
+               new_trans = (symbol, dest_new_state)
+               new_transitions.append(new_trans)
+               new_states[dest_new_state] = dest_mother_states
+            d[state] = new_transitions
+      
+      def is_reachable(state, d):
+         for trans in d.values():
+            print(trans)
+      
+      # Remoção de estados inalcançáveis
+      for state in d:
+         is_reachable(state, d)
+      
+      print(F)
+      
+      Q = list(Q)
+      F = list(F)
+      return Automaton(self.sigma, Q, d, self.ini, F)
+   
    def afneToAFN(self):
       self.compute_e_closures()
       d = dict()
