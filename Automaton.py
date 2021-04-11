@@ -27,7 +27,6 @@ class Automaton:
       return ""
    
    def afnToAFD(self):
-      Q = set()
       d = self.delta.copy()
       F = set(self.F)
       
@@ -132,17 +131,24 @@ class Automaton:
                new_states[dest_new_state] = dest_mother_states
             d[state] = new_transitions
       
-      def is_reachable(state, d):
-         for trans in d.values():
-            print(trans)
-      
       # Remoção de estados inalcançáveis
+      unreachable = set()
+      
+      graph = utils.deltaToAdjMatrix(d)
+      visited = dict()
+      
       for state in d:
-         is_reachable(state, d)
+         for node in graph:
+            visited[node] = False
+         if not utils.DFS(graph, self.ini, state, visited):
+            unreachable.add(state)
       
-      print(F)
+      for state in unreachable:
+         del d[state]
+         
+      F = F - unreachable
       
-      Q = list(Q)
+      Q = list(d.keys())
       F = list(F)
       return Automaton(self.sigma, Q, d, self.ini, F)
    
