@@ -150,6 +150,28 @@ class Automaton:
       
       Q = list(d.keys())
       F = list(F)
+      
+      # Totaliza AFD
+      incomplete_states = set()
+      for state in d:
+         if len(d[state]) < len(self.sigma):
+            incomplete_states.add(state)
+         elif len(d[state]) > len(self.sigma):
+            print("!!!!!!!!!!!!!!!!!")
+      
+      if incomplete_states:
+         new_state_d = "_d"
+         d[new_state_d] = []
+         for symbol in self.sigma:
+            d[new_state_d].append((symbol, new_state_d))
+         for state in incomplete_states:
+            missing_trans = self.sigma.copy()
+            for trans in d[state]:
+               if trans[0] in missing_trans:
+                  missing_trans.remove(trans[0])
+            for symbol in missing_trans:
+               d[state].append((symbol, new_state_d))
+               
       return Automaton(self.sigma, Q, d, self.ini, F)
    
    def afneToAFN(self):
