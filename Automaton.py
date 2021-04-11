@@ -71,6 +71,8 @@ class Automaton:
                         if t[0] == symbol:
                            dest_new_state += ''.join(t[1])
                            dest_mother_states |= t[1]
+                  if dest_new_state == '':
+                     continue
                   # Previne duplicação de estados novos com nomes diferentes (concatenações diferentes)
                   state_name = is_duplicate(dest_mother_states, new_states, True)
                   if state_name and state_name != dest_new_state:
@@ -90,7 +92,7 @@ class Automaton:
             else:
                # Atualiza transições já determinísticas (questão de tipo, convertendo de set para string)
                d[state][i] = (trans[0], ''.join(trans[1]))
-      
+            
       # Como não é garantida a ordem de concatenação na criação de novos estados,
       # é possível que new_states contenha estados duplicados nomeados diferentes (ex.: q0q1 e q1q0)
       # Comparando os estados que deram origem a eles, é simples eliminá-los
@@ -121,6 +123,8 @@ class Automaton:
                      if trans[0] == symbol:
                         dest_new_state += ''.join(trans[1])
                         dest_mother_states.add(trans[1])
+               if dest_new_state == '':
+                  continue
                state_name = is_duplicate(dest_mother_states, new_states, True)
                if state_name and state_name != dest_new_state:
                   dest_new_state = state_name
@@ -130,7 +134,7 @@ class Automaton:
                new_transitions.append(new_trans)
                new_states[dest_new_state] = dest_mother_states
             d[state] = new_transitions
-      
+            
       # Remoção de estados inalcançáveis
       unreachable = set()
       
