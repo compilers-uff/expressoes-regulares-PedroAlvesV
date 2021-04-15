@@ -272,6 +272,7 @@ class Automaton:
       
       if incomplete_states:
          new_state_d = "_d"
+         Q.append(new_state_d)
          d[new_state_d] = []
          for symbol in self.sigma:
             d[new_state_d].append((symbol, new_state_d))
