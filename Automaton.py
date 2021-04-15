@@ -26,6 +26,20 @@ class Automaton:
             print("e-closure("+state+") =", self.e_closure_table[state])
       return ""
    
+   def accepted(self, w):
+      return self.delta_star(self.ini, w) in self.F
+   
+   def delta_star(self, ini, word, debug=False):
+      current_state = ini
+      for symbol in word:
+         for trans in self.delta[current_state]:
+            if trans[0] == symbol:
+               if debug: print(f"d({current_state}, {symbol}) = {trans[1]}")
+               current_state = trans[1]
+               break
+      return current_state
+            
+   
    def afdToAFDmin(self):
       pass
    
