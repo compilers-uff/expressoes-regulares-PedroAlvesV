@@ -27,3 +27,9 @@ def DFS(G, u, v, visited):
       if canReachV == True:
          return True
    return False
+   
+def print_minTable(table):
+   for st1 in table:
+      print(st1)
+      for st2 in table[st1]:
+         print('\t'+st2+':',table[st1][st2])

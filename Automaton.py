@@ -26,8 +26,8 @@ class Automaton:
             print("e-closure("+state+") =", self.e_closure_table[state])
       return ""
    
-   def accepted(self, w):
-      return self.delta_star(self.ini, w) in self.F
+   def accepted(self, word):
+      return self.delta_star(self.ini, word) in self.F
    
    def delta_star(self, ini, word, debug=False):
       current_state = ini
@@ -38,10 +38,91 @@ class Automaton:
                current_state = trans[1]
                break
       return current_state
-            
    
    def afdToAFDmin(self):
-      pass
+      # Criação da tabela de minimização
+      table = dict()
+      sets = dict()
+      for i, st1 in enumerate(self.Q):
+         if i==len(self.Q)-1: break
+         table[st1] = dict()
+         sets[st1] = dict()
+         for j, st2 in enumerate(self.Q):
+            if j<=i: continue
+            table[st1][st2] = False
+            sets[st1][st2] = set()
+      
+      # Marcação dos estados trivialmente não-equivalentes
+      for st1 in table:
+         for st2 in table[st1]:
+            if (st1 in self.F and st2 not in self.F) or (st1 not in self.F and st2 in self.F):
+               table[st1][st2] = True
+
+      # Propagação recursiva da marcação
+      def propagate_mark(qu, qv):
+         for pair in sets[qu][qv]:
+            pu, pv = pair[0], pair[1]
+            if not pu in table or not pv in table[pu]:
+               pu, pv = pv, pu
+            table[pu][pv] = True
+            if sets[pu][pv]:
+               propagate_mark(pu, pv)
+
+      # Marcação dos estados não-equivalentes
+      for qu in table:
+         for qv in table[qu]:
+            if not table[qu][qv]:
+               for symbol in self.sigma:
+                  pu = None
+                  pv = None
+                  for trans in self.delta[qu]:
+                     if trans[0] == symbol:
+                        pu = trans[1]
+                  for trans in self.delta[qv]:
+                     if trans[0] == symbol:
+                        pv = trans[1]
+                  #print(f"\nd({qu}, {symbol}) = {pu}")
+                  #print(f"d({qv}, {symbol}) = {pv}")
+                  if pu != pv:                           # Caso 1 (pu e pv iguais): não marcar
+                     if not pu in table or not pv in table[pu]:
+                        pu, pv = pv, pu
+                     if not table[pu][pv]:               # Caso 2 ({pu, pv} não marcado): 
+                        sets[pu][pv].add((qu, qv))       #     incluir {qu, qv} na lista em {pu, pv}
+                     else:                               # Caso 3 ({pu, pv} marcado): 
+                        table[qu][qv] = True             #     marcar {qu, qv}
+                        if sets[qu][qv]:                 #     e propagar
+                           propagate_mark(qu,qv)
+   
+      # Unificação dos estados equivalentes
+      merge_map = dict()
+      for st1 in table:
+         for st2 in table[st1]:
+            if not table[st1][st2]:
+               new_state = st1+st2
+               if st1 == self.ini or st2 == self.ini:
+                  self.ini = new_state
+               if st1 in self.F or st2 in self.F:
+                  self.F.append(new_state)
+               merge_map[st1] = new_state
+               merge_map[st2] = new_state
+      
+      # Corrige transições
+      for state in self.delta:
+         for i in range(len(self.delta[state])):
+            trans = self.delta[state][i]
+            if trans[1] in merge_map:
+               self.delta[state][i] = (trans[0], merge_map[trans[1]])
+      
+      # Adiciona estados combinados a delta e remove registros estados originais
+      for old_state in merge_map:
+         if not merge_map[old_state] in self.delta:
+            self.delta[merge_map[old_state]] = self.delta[old_state].copy()
+         del self.delta[old_state]
+         if old_state in self.F:
+            self.F.remove(old_state)
+            
+      self.Q = list(self.delta.keys())
+      return self      
    
    def afnToAFD(self):
       d = self.delta.copy()
