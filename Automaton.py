@@ -26,6 +26,9 @@ class Automaton:
             print("e-closure("+state+") =", self.e_closure_table[state])
       return ""
    
+   def afdToAFDmin(self):
+      pass
+   
    def afnToAFD(self):
       d = self.delta.copy()
       F = set(self.F)
@@ -50,6 +53,8 @@ class Automaton:
       
       # Resolve indeterminismo inicial (leitura de símbolo num estado podendo levar a mais de um outro)
       for state in self.delta:
+         # print("-------------")
+         # utils.print_delta(d)
          for i in range(len(self.delta[state])):
             trans = self.delta[state][i]
             # Sendo a transição indeterminística, aglutina estados de destino num único estado novo
@@ -69,8 +74,13 @@ class Automaton:
                   for mother_state in mother_states:
                      for t in self.delta[mother_state]:
                         if t[0] == symbol:
-                           dest_new_state += ''.join(t[1])
-                           dest_mother_states |= t[1]
+                           new_state_component_candidate = ''.join(t[1])
+                           if dest_new_state != new_state_component_candidate:
+                              dest_new_state += ''.join(t[1])
+                              temp = t[1]
+                              if isinstance(t[1], str):
+                                 temp = {temp}
+                              dest_mother_states |= temp
                   if dest_new_state == '':
                      continue
                   # Previne duplicação de estados novos com nomes diferentes (concatenações diferentes)
@@ -119,10 +129,12 @@ class Automaton:
                dest_new_state = ''
                dest_mother_states = set()
                for mother_state in mother_states:
-                  for trans in self.delta[mother_state]:
+                  for trans in d[mother_state]:
                      if trans[0] == symbol:
-                        dest_new_state += ''.join(trans[1])
-                        dest_mother_states.add(trans[1])
+                        new_state_component_candidate = ''.join(trans[1])
+                        if dest_new_state != new_state_component_candidate:
+                           dest_new_state += ''.join(trans[1])
+                           dest_mother_states.add(trans[1])
                if dest_new_state == '':
                   continue
                state_name = is_duplicate(dest_mother_states, new_states, True)
