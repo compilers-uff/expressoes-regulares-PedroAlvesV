@@ -26,6 +26,25 @@ class Automaton:
             print("e-closure("+state+") =", self.e_closure_table[state])
       return ""
    
+   def simplify_state_names(self):
+      alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+      names_map = dict()
+      delta = dict()
+      for i, state in enumerate(self.Q):
+         names_map[state] = alphabet[i]
+      for state in self.delta:
+         delta[names_map[state]] = []
+         for trans in self.delta[state]:
+            delta[names_map[state]].append( (trans[0], names_map[trans[1]]) )
+            
+      Q = list(names_map.values())
+      ini = names_map[self.ini]
+      F = []
+      for state in self.F:
+         F.append(names_map[state])
+
+      return Automaton(self.sigma, Q, delta, ini, F)
+         
    def accepted(self, word):
       return self.delta_star(self.ini, word) in self.F
    
