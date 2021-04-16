@@ -51,11 +51,15 @@ class Automaton:
    def delta_star(self, ini, word, debug=False):
       current_state = ini
       for symbol in word:
+         transited = False
          for trans in self.delta[current_state]:
             if trans[0] == symbol:
                if debug: print(f"d({current_state}, {symbol}) = {trans[1]}")
                current_state = trans[1]
+               transited = True
                break
+         if not transited:
+            return "__NOTRANSITION__"
       return current_state
    
    def afdToAFDmin(self):
