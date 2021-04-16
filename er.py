@@ -28,14 +28,28 @@ def parse(tokens, automaton=None):
       a = min_automaton(token)
       return token, a
 
-def erToAFNe(er, debug=False):
+def erToAFNe(er, print_input=False):
    er = er.replace('(',' ').replace(',',' ').replace(')',' ')
    infix, afne = parse(deque(er.split()))
    afne.compute_e_closures()
-   if debug:
+   if print_input:
       print("Input:", infix)
-      print("\nAFNe:")
-      print(afne)
    return afne
+   
+'''
+afne = erToAFNe("* + . a a . b b", True)
+#afne = erToAFNe("+ a b", True)
+print("\n####################### AFNe:")
+#print(afne)
+afn = afne.afneToAFN()
+print("\n####################### AFN:")
+#print(afn)
+afd = afn.afnToAFD()
+print("\n####################### AFD:")
+#print(afd)
+afd = afd.simplify_state_names()
+afdMin = afd.afdToAFDmin()
+print("\n####################### AFD mínimo:")
+print(afdMin)
+'''
 
-erToAFNe("* + . a a . b b", True)
