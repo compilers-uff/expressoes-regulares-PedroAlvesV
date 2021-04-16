@@ -358,3 +358,23 @@ def afdToAFDmin(self):
    
    return self
 
+def match(er, w):
+   return afdToAFDmin(afnToAFD(afneToAFN(erToAFNe(er)))).accepted(w)
+
+if sys.argv[1] == '-f':
+   f = open(sys.argv[2], 'r')
+   w = sys.argv[3]
+   for er in f:
+      er = er.replace('\n', '')
+      Not = " Not"
+      if match(er, w):
+         Not = ""
+      print(f"match({er}, {w}) =={Not} OK")
+   f.close()
+else:
+   er = sys.argv[1]
+   w  = sys.argv[2]
+   Not = "Not"
+   if match(er, w):
+      Not = ""
+   print(f"match({er}, {w}) == {Not} OK")
