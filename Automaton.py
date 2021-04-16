@@ -111,20 +111,40 @@ class Automaton:
                         table[qu][qv] = True             #     marcar {qu, qv}
                         if sets[qu][qv]:                 #     e propagar
                            propagate_mark(qu,qv)
+                           
+      #utils.print_minTable(table)
    
       # Unificação dos estados equivalentes
+      # Gera um mapa de fusões inicial
       merge_map = dict()
       for st1 in table:
+         merge_map[st1] = set()
          for st2 in table[st1]:
+            merge_map[st2] = set()
             if not table[st1][st2]:
-               new_state = st1+st2
-               if st1 == self.ini or st2 == self.ini:
-                  self.ini = new_state
-               if st1 in self.F or st2 in self.F:
-                  self.F.append(new_state)
-               merge_map[st1] = new_state
-               merge_map[st2] = new_state
-      
+               merge_map[st1].add(st2)
+
+      # Remove duplicatas do mapa
+      for st1 in merge_map:
+         for st2 in merge_map.keys():
+            if st1 != st2 and merge_map[st1] and merge_map[st2]:
+               if merge_map[st1].intersection(merge_map[st2]):
+                  merge_map[st1].update(merge_map[st2])
+                  merge_map[st2] = set()
+            
+      # Uniformiza projeções no mapa
+      for state in self.Q:
+         if state in merge_map:
+            for old_state in merge_map[state]:
+               merge_map[old_state] = {state} | merge_map[state]
+                  
+      # Altera formato do mapa e tipos, criando uma relação <estado original>:<estado resultante> de string pra string
+      for state in merge_map:
+         if merge_map[state]:
+            merge_map[state] = "".join(merge_map[state])
+         else:
+            merge_map[state] = state
+               
       # Corrige transições
       for state in self.delta:
          for i in range(len(self.delta[state])):
@@ -133,15 +153,44 @@ class Automaton:
                self.delta[state][i] = (trans[0], merge_map[trans[1]])
       
       # Adiciona estados combinados a delta e remove registros estados originais
-      for old_state in merge_map:
-         if not merge_map[old_state] in self.delta:
-            self.delta[merge_map[old_state]] = self.delta[old_state].copy()
-         del self.delta[old_state]
-         if old_state in self.F:
-            self.F.remove(old_state)
-            
+      delta = dict()
+      for state in merge_map:
+         delta[merge_map[state]] = self.delta[state]
+      
+      self.Q = list(delta.keys())
+      
+      # Corrige estado inicial e estados finais
+      self.ini = merge_map[self.ini]
+      for i, state in enumerate(self.F):
+         self.F[i] = merge_map[state]
+      self.F = list(set(self.F))
+      
+      def is_d(state):
+         if state in self.F or state == self.ini:
+            return False
+         for trans in delta[state]:
+            if trans[1] != state:
+               return False
+         return True
+      
+      # Remove possível estado 'd' (criado para totalizar função programa)
+      d_states = set()
+      for state in self.Q:
+         if is_d(state):
+            del delta[state]
+            d_states.add(state)
+      for state in delta:
+         for i in range(len(delta[state])):
+            trans = delta[state][i]
+            if trans[1] in d_states:
+               delta[state].remove(trans)
+      
+      del self.delta
+      self.delta = delta
+      
       self.Q = list(self.delta.keys())
-      return self      
+      
+      return self
    
    def afnToAFD(self):
       d = self.delta.copy()
